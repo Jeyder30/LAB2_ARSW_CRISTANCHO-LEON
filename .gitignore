@@ -1,5 +1,70 @@
-target/
+# IntelliJ IDEA
 .idea/
 *.iml
-*.log
+*.iws
+*.ipr
+# Archivos de compilación
+*.class
+*.jar
+*.war
+*.ear
+
+# Archivos de sistema
 .DS_Store
+Thumbs.db
+
+# Archivos de log
+*.log
+*.log.*
+logs/
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de configuración local
+*.properties.local
+.env
+.env.*
+!.env.example
+
+# Directorios de dependencias
+target/
+build/
+.gradle/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+# https://maven.apache.org/wrapper/#usage-without-binary-jar
+.mvn/wrapper/maven-wrapper.jar
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Visual Studio (Windows)
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# NetBeans
+nbproject/
+nbactions.xml
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+
