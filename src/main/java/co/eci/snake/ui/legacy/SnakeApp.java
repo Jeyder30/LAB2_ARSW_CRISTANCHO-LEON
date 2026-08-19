@@ -26,7 +26,7 @@ public final class SnakeApp extends JFrame {
     super("The Snake Race");
     this.board = new Board(35, 28);
 
-    int N = Integer.getInteger("snakes", 2);
+    int N = Integer.getInteger("snakes", 8);
     for (int i = 0; i < N; i++) {
       int x = 2 + (i * 3) % board.width();
       int y = 2 + (i * 2) % board.height();

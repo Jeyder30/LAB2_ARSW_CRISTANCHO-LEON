@@ -31,9 +31,9 @@ public final class Snake {
 
   public Position head() { return body.peekFirst(); }
 
-  public Deque<Position> snapshot() { return new ArrayDeque<>(body); }
+  public synchronized Deque<Position> snapshot() { return new ArrayDeque<>(body); }
 
-  public void advance(Position newHead, boolean grow) {
+  public synchronized void advance(Position newHead, boolean grow) {
     body.addFirst(newHead);
     if (grow) maxLength++;
     while (body.size() > maxLength) body.removeLast();
