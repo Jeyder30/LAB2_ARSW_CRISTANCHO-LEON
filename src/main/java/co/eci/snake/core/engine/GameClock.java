@@ -35,7 +35,7 @@ public final class GameClock implements AutoCloseable {
         state.set(GameState.RUNNING);
         notifyAll();
     }
-    public synchronized void awaitRunning() throws InterruptedException {
+    public synchronized void notifyWaiting() throws InterruptedException {
         while (state.get() == GameState.PAUSED) {
             wait();
         }

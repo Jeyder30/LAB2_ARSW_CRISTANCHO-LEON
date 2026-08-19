@@ -25,7 +25,7 @@ public final class SnakeRunner implements Runnable {
   public void run() {
     try {
       while (!Thread.currentThread().isInterrupted()) {
-        clock.awaitRunning();
+        clock.notifyWaiting();
         maybeTurn();
         var res = board.step(snake);
         if (res == Board.MoveResult.HIT_OBSTACLE) {
