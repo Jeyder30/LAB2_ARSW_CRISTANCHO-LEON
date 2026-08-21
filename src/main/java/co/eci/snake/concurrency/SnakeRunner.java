@@ -25,13 +25,14 @@ public final class SnakeRunner implements Runnable {
   public void run() {
     try {
       while (!Thread.currentThread().isInterrupted()) {
-        clock.notifyWaiting();
-        maybeTurn();
-        var res = board.step(snake);
-        if (res == Board.MoveResult.HIT_OBSTACLE) {
-          randomTurn();
-        } else if (res == Board.MoveResult.ATE_TURBO) {
-          turboTicks = 100;
+        try (var ignored = clock.awaitMovement()) {
+          maybeTurn();
+          var res = board.step(snake);
+          if (res == Board.MoveResult.HIT_OBSTACLE) {
+            randomTurn();
+          } else if (res == Board.MoveResult.ATE_TURBO) {
+            turboTicks = 100;
+          }
         }
         int sleep = (turboTicks > 0) ? turboSleepMs : baseSleepMs;
         if (turboTicks > 0) turboTicks--;

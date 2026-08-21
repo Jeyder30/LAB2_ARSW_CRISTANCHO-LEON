@@ -3,6 +3,7 @@ package co.eci.snake.ui.legacy;
 import co.eci.snake.concurrency.SnakeRunner;
 import co.eci.snake.core.Board;
 import co.eci.snake.core.Direction;
+import co.eci.snake.core.GameState;
 import co.eci.snake.core.Position;
 import co.eci.snake.core.Snake;
 import co.eci.snake.core.engine.GameClock;
@@ -10,8 +11,11 @@ import co.eci.snake.core.engine.GameClock;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class SnakeApp extends JFrame {
@@ -19,14 +23,17 @@ public final class SnakeApp extends JFrame {
   private final Board board;
   private final GamePanel gamePanel;
   private final JButton actionButton;
+  private final JLabel statisticsLabel;
   private final GameClock clock;
   private final java.util.List<Snake> snakes = new java.util.ArrayList<>();
+  private ExecutorService runners;
 
   public SnakeApp() {
     super("The Snake Race");
     this.board = new Board(35, 28);
 
     int N = Integer.getInteger("snakes", 8);
+    if (N < 1) throw new IllegalArgumentException("snakes must be at least 1");
     for (int i = 0; i < N; i++) {
       int x = 2 + (i * 3) % board.width();
       int y = 2 + (i * 2) % board.height();
@@ -35,20 +42,26 @@ public final class SnakeApp extends JFrame {
     }
 
     this.gamePanel = new GamePanel(board, () -> snakes);
-    this.actionButton = new JButton("Action");
+    this.actionButton = new JButton("Iniciar");
+    this.statisticsLabel = new JLabel("El juego aún no ha iniciado.");
 
     setLayout(new BorderLayout());
     add(gamePanel, BorderLayout.CENTER);
-    add(actionButton, BorderLayout.SOUTH);
+    var controls = new JPanel(new BorderLayout());
+    controls.add(statisticsLabel, BorderLayout.CENTER);
+    controls.add(actionButton, BorderLayout.EAST);
+    add(controls, BorderLayout.SOUTH);
 
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     pack();
     setLocationRelativeTo(null);
 
     this.clock = new GameClock(60, () -> SwingUtilities.invokeLater(gamePanel::repaint));
-
-    var exec = Executors.newVirtualThreadPerTaskExecutor();
-    snakes.forEach(s -> exec.submit(new SnakeRunner(s, board,clock)));
+    addWindowListener(new WindowAdapter() {
+      @Override public void windowClosing(WindowEvent event) {
+        shutdownGame();
+      }
+    });
 
     actionButton.addActionListener((ActionEvent e) -> togglePause());
 
@@ -125,17 +138,49 @@ public final class SnakeApp extends JFrame {
     }
 
     setVisible(true);
-    clock.start();
   }
 
   private void togglePause() {
-    if ("Action".equals(actionButton.getText())) {
-      actionButton.setText("Resume");
-      clock.pause();
+    if (clock.state() == GameState.STOPPED) {
+      runners = Executors.newVirtualThreadPerTaskExecutor();
+      snakes.forEach(s -> runners.submit(new SnakeRunner(s, board, clock)));
+      clock.start();
+      actionButton.setText("Pausar");
+      statisticsLabel.setText("Juego en ejecución.");
+    } else if (clock.state() == GameState.RUNNING) {
+      clock.pauseAndAwaitQuiescence();
+      showPausedStatistics();
+      actionButton.setText("Reanudar");
     } else {
-      actionButton.setText("Action");
       clock.resume();
+      actionButton.setText("Pausar");
+      statisticsLabel.setText("Juego en ejecución.");
     }
+  }
+
+  private void showPausedStatistics() {
+    int longestIndex = -1;
+    int longestLength = -1;
+    for (int i = 0; i < snakes.size(); i++) {
+      int length = snakes.get(i).snapshot().size();
+      if (length > longestLength) {
+        longestLength = length;
+        longestIndex = i;
+      }
+    }
+
+    String longest = longestIndex < 0
+        ? "ninguna"
+        : "Serpiente " + (longestIndex + 1) + " (" + longestLength + ")";
+    // Las reglas actuales solo definen rebote contra obstáculos y no contienen
+    // ninguna condición de muerte; por eso aún no existe una peor serpiente.
+    statisticsLabel.setText("Más larga viva: " + longest
+        + " | Peor serpiente: ninguna ha muerto");
+  }
+
+  private void shutdownGame() {
+    if (runners != null) runners.shutdownNow();
+    clock.close();
   }
 
   public static final class GamePanel extends JPanel {
